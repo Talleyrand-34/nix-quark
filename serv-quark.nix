@@ -22,6 +22,11 @@ in
       default = /var/www/html;
       description = lib.mdDoc "Directory to serve files";
     };
+    host = mkOption {
+      type = types.str;
+      default = "localhost";
+      description = lib.mdDoc "Directory to serve files";
+    };
     openFirewall = mkOption {
         type = types.bool;
         default = false;
@@ -37,7 +42,18 @@ in
     systemd.packages = [ pkgs.quark ];
 
     systemd.services.quark = {
+      description = "Quark Webserver";
+      after = [ "network.target" ];
       wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        # Type = "forking";
+        # User = "fakeroute";
+        # DynamicUser = true;
+        # AmbientCapabilities = [ "CAP_NET_RAW" ];
+        ExecStart = "${pkgs.quark}/bin/quark -p ${toString cfg.port} -d ${cfg.dir} -h ${cfg.host}";
+      };
     };
+    networking.firewall.allowedTCPPorts =
+      lib.optional (cfg.enable && cfg.openFirewall) cfg.port;
   };
-};
+}
