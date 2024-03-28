@@ -36,6 +36,17 @@ in
           only be used if they are unchanged.
         '';
       };
+    nginx.enable = lib.mkOption {
+    type = types.bool;
+    default = false;
+    description = lib.mdDoc ''
+      Whether to configure nginx as a reverse proxy for quark.
+
+      It serves it under the domain specified in {option}`services.invidious.settings.domain` with enabled TLS and ACME.
+      Further configuration can be done through {option}`services.nginx.virtualHosts.''${config.services.invidious.settings.domain}.*`,
+      which can also be used to disable AMCE and TLS.
+    '';
+    };
   };
   config = mkIf cfg.enable {
     environment.systemPackages = [ pkgs.quark ];
@@ -53,6 +64,15 @@ in
         ExecStart = "${pkgs.quark}/bin/quark -p ${toString cfg.port} -d ${cfg.dir} -h ${cfg.host}";
       };
     };
+    services.nginx = {
+      enable = true;
+      virtualHosts.${cfg.host} = {
+        locations."/".proxyPass = "http://${cfg.host}:${toString cfg.port}";
+        enableACME = lib.mkDefault true;
+        forceSSL = lib.mkDefault true;
+      };
+
+  };
     networking.firewall.allowedTCPPorts =
       lib.optional (cfg.enable && cfg.openFirewall) cfg.port;
   };
