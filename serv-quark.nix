@@ -25,7 +25,8 @@ in
     host = mkOption {
       type = types.str;
       default = "localhost";
-      description = lib.mdDoc "Directory to serve files";
+      description = lib.mdDoc ''Local url for the service. Don't touch unless if you use nginx unless you check.
+      '';
     };
     openFirewall = mkOption {
         type = types.bool;
@@ -36,16 +37,23 @@ in
           only be used if they are unchanged.
         '';
       };
-    nginx.enable = lib.mkOption {
-    type = types.bool;
-    default = false;
-    description = lib.mdDoc ''
-      Whether to configure nginx as a reverse proxy for quark.
+    nginx = {
+      enable = lib.mkOption {
+        type = types.bool;
+        default = false;
+        description = lib.mdDoc ''
+          Whether to configure nginx as a reverse proxy for quark.
 
-      It serves it under the domain specified in {option}`services.invidious.settings.domain` with enabled TLS and ACME.
-      Further configuration can be done through {option}`services.nginx.virtualHosts.''${config.services.invidious.settings.domain}.*`,
-      which can also be used to disable AMCE and TLS.
-    '';
+          It serves it under the domain specified in {option}`services.invidious.settings.domain` with enabled TLS and ACME.
+          Further configuration can be done through {option}`services.nginx.virtualHosts.''${config.services.invidious.settings.domain}.*`,
+          which can also be used to disable AMCE and TLS.
+      '';
+      };
+      url= lib.mkOption {
+        type = types.str;
+        default = "localhost";
+        description = "Url for nginx";
+      };
     };
   };
   config = mkIf cfg.enable {
@@ -57,16 +65,12 @@ in
       after = [ "network.target" ];
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
-        # Type = "forking";
-        # User = "fakeroute";
-        # DynamicUser = true;
-        # AmbientCapabilities = [ "CAP_NET_RAW" ];
         ExecStart = "${pkgs.quark}/bin/quark -p ${toString cfg.port} -d ${cfg.dir} -h ${cfg.host}";
       };
     };
     services.nginx = {
       enable = true;
-      virtualHosts.${cfg.host} = {
+      virtualHosts.${cfg.nginx.url} = {
         locations."/".proxyPass = "http://${cfg.host}:${toString cfg.port}";
         enableACME = lib.mkDefault true;
         forceSSL = lib.mkDefault true;

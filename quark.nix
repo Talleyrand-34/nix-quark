@@ -28,17 +28,6 @@ stdenv.mkDerivation {
     maintainers = with maintainers; [ Talleyrand-34 ];
     platforms = platforms.linux;
   };
-  # options = {
-  #   port = mkOption {
-  #       type = lib.types.str;
-  #       default = 80;
-  #       description = lib.mdDoc ''
-  #         The exposed port.
-  #
-  #         WARNING: quark does not expose with https, use reverse proxy if needed
-  #       '';
-  #     };
-  # };
 
 }
 
